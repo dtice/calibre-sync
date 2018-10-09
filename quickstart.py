@@ -40,7 +40,9 @@ def main():
 
     # Read local library
     if not data['local_library_path']:
-        data['local_library_path'] = input("What is the directory to your Calibre Library?: ")
+        data['local_library_path'] = input("What is the full path to your Calibre Library?: ")
+
+    data['local_library'] = read_local_library(data['local_library_path'])
 
     # if remote library does not exist or has no files
     if not items:
@@ -49,7 +51,7 @@ def main():
         if input("(yes/no): ") == "yes":
             # create blank library in root GDrive folder
             file_metadata = {
-                'name': library_name,
+                'name': data['library_name'],
                 'mimeType': 'application/vnd.google-apps.folder'
                 }
             library = service.files().create(body=file_metadata, fields='id').execute()
@@ -74,17 +76,23 @@ def main():
                 q="'" + data['remote_library_id'] + "'" + " in parents"
             ).execute()
             authors = library.get('files', [])
+
+            # for each item in remote library
             for author in authors:
+                # if it is a folder
                 if author['mimeType'] == 'application/vnd.google-apps.folder':
-                    print("Author: " + author['name'])
+                    # retrieve works by author
                     author_works = service.files().list(
                         q="'"+author['id']+"' in parents"
                     ).execute()
                     books = author_works.get('files', [])
-                    #print(str(books))
+                    # for each book by the author
                     for book in books:
+                        # if it is a folder
                         if book['mimeType'] == 'application/vnd.google-apps.folder':
-                            print(" - Book: " + book['name'])
+                            # check book name against local library
+                            continue
+
             #    if book does not exist in remote library
                     # push book to remote library
 
@@ -92,6 +100,14 @@ def main():
     with open('data.json', 'w') as outfile:
         json.dump(data, outfile)
 
+
+def read_local_library(path):
+    local_library = {}
+    for author in os.listdir(path):
+        if os.path.isdir(path+"/"+author):
+            for book in os.listdir(path+"/"+author):
+                local_library[author] = book
+    return local_library
 
 if __name__ == '__main__':
     main()
