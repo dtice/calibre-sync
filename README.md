@@ -4,7 +4,7 @@
 
 #### Psuedocode:
 ```python
-def synchronize():
+def synchronize(calibre_library):
 	if(!directory_on_GDrive()):
 		create_directory_on_GDrive("calibre_sync_library")
 		print("No files to synchronize!")
